@@ -30,7 +30,11 @@ namespace Bicep.Core.Extensions
 
         public static ImmutableHashSet<TSource> ToImmutableHashSetExcludingNull<TSource>(this IEnumerable<TSource?> source, IEqualityComparer<TSource> comparer)
             where TSource : class
-            => source.Where(x => x != null).Select(x => x!).ToImmutableHashSet(comparer);
+            => WhereNotNull(source).ToImmutableHashSet(comparer);
+
+        public static IEnumerable<TSource> WhereNotNull<TSource>(this IEnumerable<TSource?> source)
+            where TSource : class
+            => source.Where(x => x != null).Select(x => x!);
             
         public static IEnumerable<T> AsEnumerable<T>(this T single)
         {

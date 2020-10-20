@@ -46,6 +46,7 @@ namespace Bicep.LanguageServer
                     .WithHandler<BicepHoverHandler>()
                     .WithHandler<BicepCompletionHandler>()
                     .WithHandler<BicepCodeActionHandler>()
+                    .WithHandler<BicepDidChangeWatchedFilesHandler>()
 #pragma warning disable 0612 // disable 'obsolete' warning for proposed LSP feature
                     .WithHandler<BicepSemanticTokensHandler>()
 #pragma warning restore 0612

@@ -46,6 +46,21 @@ namespace Bicep.Core.Syntax
             return builder.Build(normalizedFileName);
         }
 
+        public static SyntaxTreeGrouping BuildWithModifiedFiles(SyntaxTreeGrouping oldGrouping, IFileResolver fileResolver, IEnumerable<string> modifiedFiles)
+        {
+            var builder = new SyntaxTreeGroupingBuilder(fileResolver);
+
+            var filesToModify = modifiedFiles.Select(x => fileResolver.GetNormalizedFileName(x)).ToHashSet(fileResolver.PathComparer);
+
+            foreach (var oldTreeToReuse in oldGrouping.SyntaxTrees.Where(x => !filesToModify.Contains(x.FilePath)))
+            {
+                // TODO wrap IFileResolver rather than doing this - it's possible the new syntaxtreegrouping may not need some of these files
+                builder.syntaxTrees[oldTreeToReuse.FilePath] = oldTreeToReuse;
+            }
+
+            return builder.Build(oldGrouping.EntryPoint.FilePath);
+        }
+
         private SyntaxTreeGrouping Build(string entryFileName)
         {
             var entryPoint = PopulateRecursive(entryFileName, out var entryPointLoadFailureBuilder);
@@ -61,11 +76,14 @@ namespace Bicep.Core.Syntax
 
             ReportFailuresForCycles();
 
+            var filePathDependencies = syntaxTreeLoadFailures.Keys.Concat(syntaxTrees.Keys);
+
             return new SyntaxTreeGrouping(
                 entryPoint,
-                syntaxTrees.Values.OfType<SyntaxTree>().ToImmutableHashSet(), 
+                syntaxTrees.Values.ToImmutableHashSet(), 
                 moduleLookup.ToImmutableDictionary(),
-                moduleFailureLookup.ToImmutableDictionary());
+                moduleFailureLookup.ToImmutableDictionary(),
+                filePathDependencies.ToImmutableHashSet(fileResolver.PathComparer));
         }
 
         private SyntaxTree? TryGetSyntaxTree(string fullFileName, out DiagnosticBuilder.ErrorBuilderDelegate? failureBuilder)

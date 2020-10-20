@@ -3,7 +3,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
+using Bicep.Core.Parser;
+using Bicep.Core.Syntax;
 using Bicep.LanguageServer.CompilationManager;
 using Bicep.LanguageServer.Extensions;
 using Bicep.LanguageServer.Providers;
@@ -29,12 +33,27 @@ namespace Bicep.LanguageServer
             this.provider = provider;
         }
 
+        public void UpdateCompilationsWithReferences(ImmutableHashSet<DocumentUri> references)
+        {
+            foreach (var (entrypointUri, context) in activeContexts)
+            {
+                var modifiedUris = context.DocumentUris.Where(x => references.Contains(x));
+                if (!modifiedUris.Any())
+                {
+                    continue;
+                }
+
+                UpsertCompilationInternal(entrypointUri, null, this.provider.Update(context, entrypointUri, modifiedUris));
+            }
+        }
+
         public CompilationContext? UpsertCompilation(DocumentUri uri, int? version, string text)
+            => UpsertCompilationInternal(uri, version, this.provider.Create(uri, text));
+
+        private CompilationContext? UpsertCompilationInternal(DocumentUri uri, int? version, CompilationContext context)
         {
             try
             {
-                var context = this.provider.Create(uri, text);
-
                 // there shouldn't be concurrent upsert requests (famous last words...), so a simple overwrite should be sufficient
                 this.activeContexts[uri] = context;
 
@@ -102,6 +121,22 @@ namespace Bicep.LanguageServer
                 Version = version,
                 Diagnostics = new Container<OmniSharp.Extensions.LanguageServer.Protocol.Models.Diagnostic>(diagnostics)
             });
+        }
+
+        public IEnumerable<DocumentUri> GetCompilationReferences(DocumentUri uri)
+        {
+            foreach (var (parentUri, context) in activeContexts)
+            {
+                if (DocumentUri.Comparer.Equals(uri, parentUri))
+                {
+                    continue;
+                }
+
+                if (context.DocumentUris.Contains(uri))
+                {
+                    yield return parentUri;
+                }
+            }
         }
     }
 }

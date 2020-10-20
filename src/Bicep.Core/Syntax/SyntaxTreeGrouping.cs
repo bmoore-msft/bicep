@@ -15,12 +15,15 @@ namespace Bicep.Core.Syntax
 
         public ImmutableDictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> ModuleFailureLookup { get; }
 
-        public SyntaxTreeGrouping(SyntaxTree entryPoint, ImmutableHashSet<SyntaxTree> syntaxTrees, ImmutableDictionary<ModuleDeclarationSyntax, SyntaxTree> moduleLookup, ImmutableDictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> moduleFailureLookup)
+        public ImmutableHashSet<string> FilePathDependencies { get; }
+
+        public SyntaxTreeGrouping(SyntaxTree entryPoint, ImmutableHashSet<SyntaxTree> syntaxTrees, ImmutableDictionary<ModuleDeclarationSyntax, SyntaxTree> moduleLookup, ImmutableDictionary<ModuleDeclarationSyntax, DiagnosticBuilder.ErrorBuilderDelegate> moduleFailureLookup, ImmutableHashSet<string> filePathDependencies)
         {
             EntryPoint = entryPoint;
             SyntaxTrees = syntaxTrees;
             ModuleLookup = moduleLookup;
             ModuleFailureLookup = moduleFailureLookup;
+            FilePathDependencies = filePathDependencies;
         }
     }
 }

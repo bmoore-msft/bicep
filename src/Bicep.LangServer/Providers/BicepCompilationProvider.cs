@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+using System.Collections.Generic;
+using System.Linq;
 using Bicep.Core.FileSystem;
 using Bicep.Core.SemanticModel;
 using Bicep.Core.Syntax;
@@ -13,7 +15,7 @@ namespace Bicep.LanguageServer.Providers
     /// Creates compilation contexts.
     /// </summary>
     /// <remarks>This class exists only so we can mock fatal exceptions in tests.</remarks>
-    public class BicepCompilationProvider: ICompilationProvider
+    public class BicepCompilationProvider : ICompilationProvider
     {
         private readonly IResourceTypeProvider resourceTypeProvider;
         private readonly IFileResolver fileResolver;
@@ -28,6 +30,15 @@ namespace Bicep.LanguageServer.Providers
         {
             var mainFileName = documentUri.GetFileSystemPath();
             var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.BuildWithPreloadedFile(fileResolver, mainFileName, text);
+            var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
+
+            return new CompilationContext(compilation);
+        }
+
+        public CompilationContext Update(CompilationContext existingContext, DocumentUri documentUri, IEnumerable<DocumentUri> updatedUris)
+        {
+            var existingSyntaxTreeGrouping = existingContext.Compilation.SyntaxTreeGrouping;
+            var syntaxTreeGrouping = SyntaxTreeGroupingBuilder.BuildWithModifiedFiles(existingSyntaxTreeGrouping, fileResolver, updatedUris.Select(x => x.GetFileSystemPath()));
             var compilation = new Compilation(resourceTypeProvider, syntaxTreeGrouping);
 
             return new CompilationContext(compilation);
