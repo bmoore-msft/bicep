@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using Bicep.Core;
 using Bicep.Core.Navigation;
 using Bicep.Core.Parser;
 using Bicep.Core.Syntax;
@@ -96,6 +94,18 @@ namespace Bicep.LanguageServer.Completions
                     // the cursor position is on the type if we have an identifier (non-zero length span) and the offset matches the type position
                     return ConvertFlag(output.Name.Span.Length > 0 && output.Type.Span.Position == offset, BicepCompletionContextKind.OutputType);
 
+                case ResourceDeclarationSyntax resource:
+                    // the most specific matching node is a resource declaration
+                    // the declaration syntax is "resource <identifier> '<type>' ..."
+                    // the cursor position is on the type if we have an identifier (non-zero length span) and the offset matches the type position
+                    return ConvertFlag(resource.Name.Span.Length > 0 && resource.Type.Span.Position == offset, BicepCompletionContextKind.ResourceType);
+
+                case ModuleDeclarationSyntax module:
+                    // the most specific matching node is a module declaration
+                    // the declaration syntax is "module <identifier> '<path>' ..."
+                    // the cursor position is on the type if we have an identifier (non-zero length span) and the offset matches the path position
+                    return ConvertFlag(module.Name.Span.Length > 0 && module.Path.Span.Position == offset, BicepCompletionContextKind.ModulePath);
+
                 case Token token when token.Type == TokenType.Identifier && matchingNodes[^2] is TypeSyntax && matchingNodes.Count >= 3:
                     // we are in a token that is inside a TypeSyntax node, which is inside some other node
                     switch (matchingNodes[^3])
@@ -107,6 +117,21 @@ namespace Bicep.LanguageServer.Completions
                         case OutputDeclarationSyntax _:
                             // type syntax is inside an output declaration
                             return BicepCompletionContextKind.OutputType;
+                    }
+
+                    break;
+
+                case Token token when token.Type == TokenType.StringComplete && matchingNodes[^2] is StringSyntax && matchingNodes.Count >= 3:
+                    // we are in a token that is inside a StringSyntax node, which is inside some other node
+                    switch (matchingNodes[^3])
+                    {
+                        case ResourceDeclarationSyntax _:
+                            // the string syntax is inside a param declaration
+                            return BicepCompletionContextKind.ResourceType;
+
+                        case ModuleDeclarationSyntax _:
+                            // the string syntax is inside a module declaration
+                            return BicepCompletionContextKind.ModulePath;
                     }
 
                     break;

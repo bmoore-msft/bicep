@@ -21,7 +21,8 @@ namespace Bicep.LanguageServer.Completions
                 .Concat(GetDeclarationTypeCompletions(context))
                 .Concat(GetObjectPropertyNameCompletions(model, context))
                 .Concat(GetPropertyValueCompletions(model, context))
-                .Concat(GetArrayItemCompletions(model, context));
+                .Concat(GetArrayItemCompletions(model, context))
+                .Concat(GetResourceTypeCompletions(model,context));
         }
 
         private IEnumerable<CompletionItem> GetDeclarationCompletions(BicepCompletionContext context)
@@ -114,6 +115,17 @@ namespace Bicep.LanguageServer.Completions
             return Enumerable.Empty<CompletionItem>();
         }
 
+        private IEnumerable<CompletionItem> GetResourceTypeCompletions(SemanticModel model, BicepCompletionContext context)
+        {
+            if (context.Kind != BicepCompletionContextKind.ResourceType)
+            {
+                return Enumerable.Empty<CompletionItem>();
+            }
+
+            
+
+            return CompletionItemFactory.CreateKeywordCompletion("lol", "LOL").AsEnumerable();
+        }
 
         private static IEnumerable<CompletionItem> GetParameterTypeSnippets()
         {
